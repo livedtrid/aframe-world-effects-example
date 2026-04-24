@@ -1,15 +1,17 @@
 // tap-place.js – One-time AR planet placement with sequential label reveal
 
 const PLANET_SCALE = '1.5 1.5 1.5'
+const PLANET_BASE_Y_OFFSET = 0.10
 const PLANET_LIFT  = 0.18          // metres the planet floats up during entrance
 const SPIN_DUR     = 14000         // ms per full rotation
 const ENTRANCE_DUR = 1400          // ms for scale + lift animation
+const SHADOW_OPACITY = 0.28
 
 const LABELS = [
-  { text: 'Onboarding inteligente',    offset: '-2.40 1.80 0' },
-  { text: 'Bem-estar digital',          offset:  '2.40 1.80 0' },
-  { text: 'Crescimento contínuo',       offset: '-2.40 -0.80 0' },
-  { text: 'Experiência personalizada',  offset:  '2.40 -0.80 0' },
+  { text: 'Onboarding inteligente',    offset: '-0.48 0.36 0' },
+  { text: 'Bem-estar digital',          offset:  '0.48 0.36 0' },
+  { text: 'Crescimento contínuo',       offset: '-0.48 -0.16 0' },
+  { text: 'Experiência personalizada',  offset:  '0.48 -0.16 0' },
 ]
 
 export const tapPlaceComponent = {
@@ -29,13 +31,27 @@ export const tapPlaceComponent = {
   },
 
   _spawnPlanet(touchPoint) {
+    const basePos = {
+      x: touchPoint.x,
+      y: touchPoint.y + PLANET_BASE_Y_OFFSET,
+      z: touchPoint.z,
+    }
+
     const planet = document.createElement('a-entity')
-    planet.setAttribute('position', touchPoint)
+    planet.setAttribute('position', basePos)
     planet.setAttribute('gltf-model', '#planetModel')
     planet.setAttribute('class', 'cantap')
     planet.setAttribute('scale', '0.001 0.001 0.001')
     planet.setAttribute('visible', 'false')
 
+    const shadow = document.createElement('a-circle')
+    shadow.setAttribute('position', `${touchPoint.x} ${touchPoint.y + 0.01} ${touchPoint.z}`)
+    shadow.setAttribute('rotation', '-90 0 0')
+    shadow.setAttribute('radius', '0.95')
+    shadow.setAttribute('material', 'color: #000000; transparent: true; opacity: 0; shader: flat')
+    shadow.setAttribute('scale', '0.7 0.7 0.7')
+
+    this.el.sceneEl.appendChild(shadow)
     this.el.sceneEl.appendChild(planet)
 
     planet.addEventListener('model-loaded', () => {
@@ -53,8 +69,24 @@ export const tapPlaceComponent = {
       // — Upward float during entrance —
       planet.setAttribute('animation__lift', {
         property: 'position',
-        from: `${touchPoint.x} ${touchPoint.y} ${touchPoint.z}`,
-        to:   `${touchPoint.x} ${touchPoint.y + PLANET_LIFT} ${touchPoint.z}`,
+        from: `${basePos.x} ${basePos.y} ${basePos.z}`,
+        to:   `${basePos.x} ${basePos.y + PLANET_LIFT} ${basePos.z}`,
+        dur: ENTRANCE_DUR,
+        easing: 'easeOutCubic',
+      })
+
+      shadow.setAttribute('animation__shadowfade', {
+        property: 'material.opacity',
+        from: 0,
+        to: SHADOW_OPACITY,
+        dur: ENTRANCE_DUR,
+        easing: 'easeOutCubic',
+      })
+
+      shadow.setAttribute('animation__shadowscale', {
+        property: 'scale',
+        from: '0.7 0.7 0.7',
+        to: '1 1 1',
         dur: ENTRANCE_DUR,
         easing: 'easeOutCubic',
       })
@@ -100,8 +132,8 @@ export const tapPlaceComponent = {
         // Dark pill background for readability
         const bg = document.createElement('a-plane')
         bg.setAttribute('material', 'color: #080820; transparent: true; opacity: 0.80; shader: flat')
-        bg.setAttribute('width',  '3.00')
-        bg.setAttribute('height', '1.30')
+        bg.setAttribute('width',  '0.60')
+        bg.setAttribute('height', '0.26')
         bg.setAttribute('position', '0 0 -0.005')
         label.appendChild(bg)
 
@@ -111,8 +143,8 @@ export const tapPlaceComponent = {
           value: text,
           color: '#FFFFFF',
           align: 'center',
-          width: 2.75,
-          wrapCount: 28,
+          width: 0.55,
+          wrapCount: 14,
         })
         label.appendChild(textEl)
 
@@ -120,7 +152,7 @@ export const tapPlaceComponent = {
         label.setAttribute('animation__appear', {
           property: 'scale',
           from: '0.001 0.001 0.001',
-          to: '5 5 5',
+          to: '1 1 1',
           dur: 480,
           easing: 'easeOutCubic',
         })
