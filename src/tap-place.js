@@ -1,50 +1,130 @@
-// Component that places cacti where the ground is clicked
+// tap-place.js – One-time AR planet placement with sequential label reveal
+
+const PLANET_SCALE = '0.3 0.3 0.3'
+const PLANET_LIFT  = 0.18          // metres the planet floats up during entrance
+const SPIN_DUR     = 14000         // ms per full rotation
+const ENTRANCE_DUR = 1400          // ms for scale + lift animation
+
+const LABELS = [
+  { text: 'Onboarding inteligente',    offset: '-0.48 0.36 0' },
+  { text: 'Bem-estar digital',          offset:  '0.48 0.36 0' },
+  { text: 'Crescimento contínuo',       offset: '-0.48 -0.16 0' },
+  { text: 'Experiência personalizada',  offset:  '0.48 -0.16 0' },
+]
 
 export const tapPlaceComponent = {
-  schema: {
-    min: {default: 6},
-    max: {default: 10},
-  },
   init() {
+    this.modelPlaced    = false
+    this.messagesRevealed = false
+
     const ground = document.getElementById('ground')
-    this.prompt = document.getElementById('promptText')
-    
+    this.prompt  = document.getElementById('promptText')
+
     ground.addEventListener('click', (event) => {
-      // Dismiss the prompt text.
+      if (this.modelPlaced) return
+      this.modelPlaced = true
       this.prompt.style.display = 'none'
-      
-      // Create new entity for the new object
-      const newElement = document.createElement('a-entity')
+      this._spawnPlanet(event.detail.intersection.point)
+    })
+  },
 
-      // The raycaster gives a location of the touch in the scene
-      const touchPoint = event.detail.intersection.point
-      newElement.setAttribute('position', touchPoint)
+  _spawnPlanet(touchPoint) {
+    const planet = document.createElement('a-entity')
+    planet.setAttribute('position', touchPoint)
+    planet.setAttribute('gltf-model', '#planetModel')
+    planet.setAttribute('class', 'cantap')
+    planet.setAttribute('scale', '0.001 0.001 0.001')
+    planet.setAttribute('visible', 'false')
 
-      const randomYRotation = Math.random() * 360
-      newElement.setAttribute('rotation', `0 ${randomYRotation} 0`)
+    this.el.sceneEl.appendChild(planet)
 
-      const randomScale = Math.floor(Math.random() * (Math.floor(this.data.max) - Math.ceil(this.data.min)) + Math.ceil(this.data.min))
+    planet.addEventListener('model-loaded', () => {
+      planet.setAttribute('visible', 'true')
 
-      newElement.setAttribute('visible', 'false')
-      newElement.setAttribute('scale', '0.0001 0.0001 0.0001')
-
-      newElement.setAttribute('shadow', {
-        receive: false,
+      // — Scale entrance —
+      planet.setAttribute('animation__scale', {
+        property: 'scale',
+        from: '0.04 0.04 0.04',
+        to: PLANET_SCALE,
+        dur: ENTRANCE_DUR,
+        easing: 'easeOutCubic',
       })
 
-      newElement.setAttribute('gltf-model', '#cactusModel')
-      this.el.sceneEl.appendChild(newElement)
+      // — Upward float during entrance —
+      planet.setAttribute('animation__lift', {
+        property: 'position',
+        from: `${touchPoint.x} ${touchPoint.y} ${touchPoint.z}`,
+        to:   `${touchPoint.x} ${touchPoint.y + PLANET_LIFT} ${touchPoint.z}`,
+        dur: ENTRANCE_DUR,
+        easing: 'easeOutCubic',
+      })
 
-      newElement.addEventListener('model-loaded', () => {
-        // Once the model is loaded, we are ready to show it popping in using an animation
-        newElement.setAttribute('visible', 'true')
-        newElement.setAttribute('animation', {
-          property: 'scale',
-          to: `${randomScale} ${randomScale} ${randomScale}`,
-          easing: 'easeOutElastic',
-          dur: 800,
+      // — Idle rotation – begins after entrance completes —
+      setTimeout(() => {
+        planet.setAttribute('animation__spin', {
+          property: 'rotation',
+          from: '0 0 0',
+          to: '0 360 0',
+          loop: true,
+          dur: SPIN_DUR,
+          easing: 'linear',
         })
-      })
+      }, ENTRANCE_DUR)
+    })
+
+    // Tap model → reveal labels once
+    planet.addEventListener('click', (e) => {
+      e.stopPropagation()
+      if (this.messagesRevealed) return
+      this.messagesRevealed = true
+      this._revealLabels(planet)
+    })
+  },
+
+  _revealLabels(planet) {
+    // Label container sits at planet's current world position but does NOT rotate
+    const pos = planet.object3D.position
+
+    const container = document.createElement('a-entity')
+    container.setAttribute('position', { x: pos.x, y: pos.y, z: pos.z })
+    this.el.sceneEl.appendChild(container)
+
+    LABELS.forEach(({ text, offset }, i) => {
+      setTimeout(() => {
+        const label = document.createElement('a-entity')
+        label.setAttribute('position', offset)
+        label.setAttribute('billboard', '')       // custom component – faces camera
+        label.setAttribute('scale', '0.001 0.001 0.001')
+        container.appendChild(label)
+
+        // Dark pill background for readability
+        const bg = document.createElement('a-plane')
+        bg.setAttribute('material', 'color: #080820; transparent: true; opacity: 0.80; shader: flat')
+        bg.setAttribute('width',  '0.60')
+        bg.setAttribute('height', '0.26')
+        bg.setAttribute('position', '0 0 -0.005')
+        label.appendChild(bg)
+
+        // Text
+        const textEl = document.createElement('a-entity')
+        textEl.setAttribute('text', {
+          value: text,
+          color: '#FFFFFF',
+          align: 'center',
+          width: 0.55,
+          wrapCount: 14,
+        })
+        label.appendChild(textEl)
+
+        // Fade-in via scale
+        label.setAttribute('animation__appear', {
+          property: 'scale',
+          from: '0.001 0.001 0.001',
+          to: '1 1 1',
+          dur: 480,
+          easing: 'easeOutCubic',
+        })
+      }, i * 450 + 150)
     })
   },
 }
