@@ -1,15 +1,15 @@
 // tap-place.js – One-time AR planet placement with sequential label reveal
 
-const PLANET_SCALE = '0.3 0.3 0.3'
+const PLANET_SCALE = '1.5 1.5 1.5'
 const PLANET_LIFT  = 0.18          // metres the planet floats up during entrance
 const SPIN_DUR     = 14000         // ms per full rotation
 const ENTRANCE_DUR = 1400          // ms for scale + lift animation
 
 const LABELS = [
-  { text: 'Onboarding inteligente',    offset: '-0.48 0.36 0' },
-  { text: 'Bem-estar digital',          offset:  '0.48 0.36 0' },
-  { text: 'Crescimento contínuo',       offset: '-0.48 -0.16 0' },
-  { text: 'Experiência personalizada',  offset:  '0.48 -0.16 0' },
+  { text: 'Onboarding inteligente',    offset: '-2.40 1.80 0' },
+  { text: 'Bem-estar digital',          offset:  '2.40 1.80 0' },
+  { text: 'Crescimento contínuo',       offset: '-2.40 -0.80 0' },
+  { text: 'Experiência personalizada',  offset:  '2.40 -0.80 0' },
 ]
 
 export const tapPlaceComponent = {
@@ -44,7 +44,7 @@ export const tapPlaceComponent = {
       // — Scale entrance —
       planet.setAttribute('animation__scale', {
         property: 'scale',
-        from: '0.04 0.04 0.04',
+        from: '0.20 0.20 0.20',
         to: PLANET_SCALE,
         dur: ENTRANCE_DUR,
         easing: 'easeOutCubic',
@@ -100,8 +100,8 @@ export const tapPlaceComponent = {
         // Dark pill background for readability
         const bg = document.createElement('a-plane')
         bg.setAttribute('material', 'color: #080820; transparent: true; opacity: 0.80; shader: flat')
-        bg.setAttribute('width',  '0.60')
-        bg.setAttribute('height', '0.26')
+        bg.setAttribute('width',  '3.00')
+        bg.setAttribute('height', '1.30')
         bg.setAttribute('position', '0 0 -0.005')
         label.appendChild(bg)
 
@@ -111,8 +111,8 @@ export const tapPlaceComponent = {
           value: text,
           color: '#FFFFFF',
           align: 'center',
-          width: 0.55,
-          wrapCount: 14,
+          width: 2.75,
+          wrapCount: 28,
         })
         label.appendChild(textEl)
 
@@ -120,7 +120,7 @@ export const tapPlaceComponent = {
         label.setAttribute('animation__appear', {
           property: 'scale',
           from: '0.001 0.001 0.001',
-          to: '1 1 1',
+          to: '5 5 5',
           dur: 480,
           easing: 'easeOutCubic',
         })
