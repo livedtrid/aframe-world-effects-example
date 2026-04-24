@@ -1,17 +1,17 @@
 // tap-place.js – One-time AR planet placement with sequential label reveal
 
-const PLANET_SCALE = '1.5 1.5 1.5'
-const PLANET_BASE_Y_OFFSET = 0.10
+const PLANET_SCALE = '3 3 3'
+const PLANET_BASE_Y_OFFSET = 4
 const PLANET_LIFT  = 0.18          // metres the planet floats up during entrance
 const SPIN_DUR     = 14000         // ms per full rotation
 const ENTRANCE_DUR = 1400          // ms for scale + lift animation
 const SHADOW_OPACITY = 0.28
 
 const LABELS = [
-  { text: 'Onboarding inteligente',    offset: '-0.48 0.36 0' },
-  { text: 'Bem-estar digital',          offset:  '0.48 0.36 0' },
-  { text: 'Crescimento contínuo',       offset: '-0.48 -0.16 0' },
-  { text: 'Experiência personalizada',  offset:  '0.48 -0.16 0' },
+  { text: 'Onboarding inteligente',    offset: '-4 3 0' },
+  { text: 'Bem-estar digital',          offset:  '4 3 0' },
+  { text: 'Crescimento contínuo',       offset: '-4 -1 0' },
+  { text: 'Experiência personalizada',  offset:  '4 -1 0' },
 ]
 
 export const tapPlaceComponent = {
@@ -32,10 +32,13 @@ export const tapPlaceComponent = {
 
   _spawnPlanet(touchPoint) {
     const basePos = {
-      x: touchPoint.x,
-      y: touchPoint.y + PLANET_BASE_Y_OFFSET,
-      z: touchPoint.z,
+      x: 0,
+      y: PLANET_BASE_Y_OFFSET,
+      z: 0,
     }
+
+    const anchor = document.createElement('a-entity')
+    anchor.setAttribute('position', touchPoint)
 
     const planet = document.createElement('a-entity')
     planet.setAttribute('position', basePos)
@@ -45,14 +48,15 @@ export const tapPlaceComponent = {
     planet.setAttribute('visible', 'false')
 
     const shadow = document.createElement('a-circle')
-    shadow.setAttribute('position', `${touchPoint.x} ${touchPoint.y + 0.01} ${touchPoint.z}`)
+    shadow.setAttribute('position', '0 0.01 0')
     shadow.setAttribute('rotation', '-90 0 0')
     shadow.setAttribute('radius', '0.95')
     shadow.setAttribute('material', 'color: #000000; transparent: true; opacity: 0; shader: flat')
     shadow.setAttribute('scale', '0.7 0.7 0.7')
 
-    this.el.sceneEl.appendChild(shadow)
-    this.el.sceneEl.appendChild(planet)
+    anchor.appendChild(shadow)
+    anchor.appendChild(planet)
+    this.el.sceneEl.appendChild(anchor)
 
     planet.addEventListener('model-loaded', () => {
       planet.setAttribute('visible', 'true')
@@ -96,7 +100,7 @@ export const tapPlaceComponent = {
         planet.setAttribute('animation__spin', {
           property: 'rotation',
           from: '0 0 0',
-          to: '0 360 0',
+          to: '0 359 0',
           loop: true,
           dur: SPIN_DUR,
           easing: 'linear',
@@ -109,17 +113,15 @@ export const tapPlaceComponent = {
       e.stopPropagation()
       if (this.messagesRevealed) return
       this.messagesRevealed = true
-      this._revealLabels(planet)
+      this._revealLabels(anchor)
     })
   },
 
-  _revealLabels(planet) {
-    // Label container sits at planet's current world position but does NOT rotate
-    const pos = planet.object3D.position
-
+  _revealLabels(anchor) {
+    // Keep labels in the same anchor as planet/shadow, but outside rotating planet entity.
     const container = document.createElement('a-entity')
-    container.setAttribute('position', { x: pos.x, y: pos.y, z: pos.z })
-    this.el.sceneEl.appendChild(container)
+    container.setAttribute('position', `0 ${PLANET_BASE_Y_OFFSET + PLANET_LIFT} 0`)
+    anchor.appendChild(container)
 
     LABELS.forEach(({ text, offset }, i) => {
       setTimeout(() => {
@@ -152,7 +154,7 @@ export const tapPlaceComponent = {
         label.setAttribute('animation__appear', {
           property: 'scale',
           from: '0.001 0.001 0.001',
-          to: '1 1 1',
+          to: '3 3 3',
           dur: 480,
           easing: 'easeOutCubic',
         })
